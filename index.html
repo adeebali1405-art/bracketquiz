@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>BracketQuiz · Web Fundamentals Quiz BY M.Adeeb Ali Softwer Developer</title>
+  <meta name="description" content="BracketQuiz is a fast, keyboard-friendly multiple-choice quiz that tests your HTML, CSS and JavaScript fundamentals." />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%233D4DFF'/%3E%3Cpath d='M24 18 12 32l12 14M40 18l12 14-12 14' fill='none' stroke='%23FFD84D' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ---------- Design tokens ---------- */
+    :root {
+      color-scheme: light dark;
+
+      --bg:     light-dark(#e8ebff, #0f1030);
+      --card:   light-dark(#ffffff, #1a1c4a);
+      --ink:    light-dark(#14163a, #f1f2ff);
+      --muted:  light-dark(#5a5e8c, #a3a7d6);
+      --line:   light-dark(#d5d9fb, #2d3070);
+      --brand:  light-dark(#3d4dff, #7c88ff);
+      --on-brand: #ffffff;
+      --sun:    #ffd84d;
+      --ok:     light-dark(#0e9f6e, #3ddc97);
+      --bad:    light-dark(#e5484d, #ff7a7f);
+
+      --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+      --font-body: "DM Sans", system-ui, sans-serif;
+
+      --radius: 18px;
+      --edge: 2px solid var(--ink);
+      --lift: 6px 6px 0 var(--ink);
+      --ease: cubic-bezier(.2, .8, .2, 1);
+    }
+
+    /* ---------- Base ---------- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      min-block-size: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+      font: 400 1rem/1.55 var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--brand) 22%, transparent) 1.2px, transparent 0) 0 0 / 22px 22px,
+        var(--bg);
+    }
+
+    button { font: inherit; color: inherit; cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+    .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .icon { inline-size: 1.25em; block-size: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ---------- App shell ---------- */
+    .app {
+      inline-size: min(100%, 44rem);
+      display: grid;
+      gap: 1.1rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      font: 800 1.25rem/1 var(--font-display);
+      letter-spacing: -.02em;
+    }
+    .brand .mark {
+      display: grid;
+      place-items: center;
+      inline-size: 2.4rem;
+      block-size: 2.4rem;
+      background: var(--brand);
+      color: var(--sun);
+      border: var(--edge);
+      border-radius: 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      rotate: -4deg;
+    }
+    .brand .mark .icon { inline-size: 1.4rem; block-size: 1.4rem; stroke-width: 3; }
+
+    .chips { display: flex; gap: .5rem; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .35rem .75rem;
+      font-weight: 700;
+      font-size: .9rem;
+      background: var(--card);
+      border: var(--edge);
+      border-radius: 999px;
+    }
+    .chip .icon { color: var(--brand); }
+    .chip.streak .icon { color: #ff7a1a; }
+
+    .card {
+      background: var(--card);
+      border: var(--edge);
+      border-radius: var(--radius);
+      box-shadow: var(--lift);
+      padding: clamp(1.25rem, 4vw, 2.25rem);
+    }
+
+    .screen[hidden] { display: none; }
+    .screen { animation: enter .45s var(--ease) both; }
+    @keyframes enter { from { opacity: 0; translate: 0 14px; } }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      padding: .85rem 1.4rem;
+      font-weight: 700;
+      background: var(--brand);
+      color: var(--on-brand);
+      border: var(--edge);
+      border-radius: 14px;
+      box-shadow: 4px 4px 0 var(--ink);
+      transition: translate .12s var(--ease), box-shadow .12s var(--ease), background-color .2s;
+
+      &:hover:not(:disabled) { translate: -1px -1px; box-shadow: 5px 5px 0 var(--ink); }
+      &:active:not(:disabled) { translate: 3px 3px; box-shadow: 1px 1px 0 var(--ink); }
+      &:disabled { background: var(--line); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+
+      &.ghost { background: var(--card); color: var(--ink); }
+      &.sun { background: var(--sun); color: #14163a; }
+    }
+
+    /* ---------- Start screen ---------- */
+    .hero h1 {
+      margin: 0 0 .75rem;
+      font: 800 clamp(2rem, 7vw, 3.4rem)/1.02 var(--font-display);
+      letter-spacing: -.035em;
+      text-wrap: balance;
+    }
+    .hero p { margin: 0 0 1.5rem; color: var(--muted); max-inline-size: 36rem; text-wrap: pretty; }
+
+    .stack-tags { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-end: 1.5rem; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .3rem .7rem;
+      font-weight: 700;
+      font-size: .85rem;
+      border: var(--edge);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--brand) 12%, var(--card));
+    }
+    .tag.css { background: color-mix(in srgb, var(--sun) 45%, var(--card)); }
+    .tag.js  { background: color-mix(in srgb, var(--ok) 22%, var(--card)); }
+
+    .start-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+    .hint { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted); font-size: .9rem; }
+    kbd {
+      font: 700 .8rem/1 var(--font-body);
+      padding: .25rem .45rem;
+      border: 1.5px solid var(--ink);
+      border-block-end-width: 3px;
+      border-radius: 6px;
+      background: var(--card);
+    }
+
+    /* ---------- Quiz screen ---------- */
+    .progress {
+      display: flex;
+      gap: 6px;
+      margin-block-end: 1.5rem;
+    }
+    .progress i {
+      flex: 1;
+      block-size: 10px;
+      border: 1.5px solid var(--ink);
+      border-radius: 99px;
+      background: var(--line);
+      transition: background-color .3s;
+    }
+    .progress i.done.ok   { background: var(--ok); }
+    .progress i.done.bad  { background: var(--bad); }
+    .progress i.current   { background: var(--sun); }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-block-end: .75rem;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: .9rem;
+    }
+
+    .question {
+      margin: 0 0 1.5rem;
+      font: 700 clamp(1.3rem, 4.2vw, 1.85rem)/1.2 var(--font-display);
+      letter-spacing: -.02em;
+      text-wrap: balance;
+    }
+
+    .options { display: grid; gap: .75rem; padding: 0; margin: 0; list-style: none; }
+
+    .option {
+      inline-size: 100%;
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+      padding: .8rem 1rem;
+      text-align: start;
+      font-weight: 500;
+      background: var(--card);
+      border: var(--edge);
+      border-radius: 14px;
+      transition: translate .12s var(--ease), background-color .2s, box-shadow .12s var(--ease);
+
+      .key {
+        display: grid;
+        place-items: center;
+        flex: none;
+        inline-size: 2.1rem;
+        block-size: 2.1rem;
+        font: 800 .95rem/1 var(--font-display);
+        border: 1.5px solid var(--ink);
+        border-block-end-width: 4px;
+        border-radius: 8px;
+        background: var(--bg);
+      }
+      .label { flex: 1; overflow-wrap: anywhere; }
+      .status { display: none; }
+
+      &:hover:not(:disabled) { translate: -2px -2px; box-shadow: 4px 4px 0 var(--ink); background: color-mix(in srgb, var(--brand) 8%, var(--card)); }
+      &:active:not(:disabled) { translate: 2px 2px; box-shadow: none; }
+      &:disabled { cursor: default; }
+
+      &.correct { background: color-mix(in srgb, var(--ok) 20%, var(--card)); .key { background: var(--ok); color: #fff; } .status { display: block; color: var(--ok); } }
+      &.wrong   { background: color-mix(in srgb, var(--bad) 18%, var(--card)); .key { background: var(--bad); color: #fff; } .status { display: block; color: var(--bad); } animation: shake .35s; }
+      &.dim     { opacity: .55; }
+    }
+    @keyframes shake { 25% { translate: -5px 0; } 75% { translate: 5px 0; } }
+
+    .feedback {
+      display: none;
+      margin-block-start: 1.1rem;
+      padding: .8rem 1rem;
+      border: var(--edge);
+      border-radius: 12px;
+      font-size: .95rem;
+      background: color-mix(in srgb, var(--sun) 35%, var(--card));
+
+      &.show { display: block; animation: enter .3s var(--ease) both; }
+      strong { font-weight: 700; }
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-block-start: 1.5rem;
+    }
+
+    /* ---------- Result screen ---------- */
+    .result { text-align: center; }
+    .ring {
+      position: relative;
+      inline-size: 11rem;
+      block-size: 11rem;
+      margin: 0 auto 1.25rem;
+    }
+    .ring svg { inline-size: 100%; block-size: 100%; rotate: -90deg; }
+    .ring circle { fill: none; stroke-width: 12; }
+    .ring .track { stroke: var(--line); }
+    .ring .bar {
+      stroke: var(--brand);
+      stroke-linecap: round;
+      stroke-dasharray: 326.73;
+      stroke-dashoffset: 326.73;
+      transition: stroke-dashoffset 1.1s var(--ease) .2s;
+    }
+    .ring .pct {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      font: 800 2.6rem/1 var(--font-display);
+      letter-spacing: -.03em;
+
+      small { font: 700 .85rem/1.4 var(--font-body); color: var(--muted); letter-spacing: 0; }
+    }
+    .result h2 { margin: 0 0 .35rem; font: 800 clamp(1.6rem, 5vw, 2.2rem)/1.1 var(--font-display); letter-spacing: -.03em; }
+    .result .sub { margin: 0 0 1.25rem; color: var(--muted); }
+    .result .chips { justify-content: center; flex-wrap: wrap; margin-block-end: 1.5rem; }
+    .result .row { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+
+    details.review {
+      margin-block-start: 1.75rem;
+      text-align: start;
+      border-block-start: 2px dashed var(--line);
+      padding-block-start: 1rem;
+
+      summary { cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: .5rem; }
+      ol { margin: 1rem 0 0; padding: 0; list-style: none; display: grid; gap: .75rem; }
+      li { padding: .75rem .9rem; border: 1.5px solid var(--ink); border-radius: 12px; font-size: .92rem; }
+      li.ok  { background: color-mix(in srgb, var(--ok) 14%, var(--card)); }
+      li.bad { background: color-mix(in srgb, var(--bad) 13%, var(--card)); }
+      li b { display: block; margin-block-end: .2rem; }
+      li span { display: block; color: var(--muted); }
+    }
+
+    footer { text-align: center; color: var(--muted); font-size: .85rem; }
+    footer a { color: inherit; font-weight: 700; }
+
+    /* ---------- Responsive + motion ---------- */
+    @media (max-width: 30rem) {
+      .actions { flex-direction: column-reverse; align-items: stretch; }
+      .actions .btn { inline-size: 100%; }
+      .chip span.txt { display: none; }
+      .hint { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- SVG icon sprite (no external icon library needed) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0V4ZM8 6H4v1a3 3 0 0 0 4 2.8M16 6h4v1a3 3 0 0 1-4 2.8M12 14v4m-4 2h8"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 1-3 0-6 1-9Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5-12-7.5Z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6l1-7Z"/></symbol>
+  </svg>
+
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark"><svg class="icon"><use href="#i-code"/></svg></span>
+        BracketQuiz BY M.Adeeb Ali Softwer Developer
+      </div>
+      <div class="chips" id="chips" hidden>
+        <span class="chip" title="Score"><svg class="icon"><use href="#i-bolt"/></svg><b id="scoreChip">0</b><span class="txt">pts</span></span>
+        <span class="chip streak" title="Current streak"><svg class="icon"><use href="#i-flame"/></svg><b id="streakChip">0</b><span class="txt">streak</span></span>
+      </div>
+    </header>
+
+    <!-- START -->
+    <section class="card screen hero" id="screenStart" aria-labelledby="heroTitle">
+      <h1 id="heroTitle">How well do you know the web?</h1>
+      <p>Ten quick questions on HTML, CSS and JavaScript. Pick an answer, see the explanation right away, and finish with your score.</p>
+      <div class="stack-tags" aria-label="Topics covered">
+        <span class="tag"><svg class="icon"><use href="#i-code"/></svg>HTML</span>
+        <span class="tag css"><svg class="icon"><use href="#i-code"/></svg>CSS</span>
+        <span class="tag js"><svg class="icon"><use href="#i-code"/></svg>JavaScript</span>
+      </div>
+      <div class="start-row">
+        <button class="btn sun" id="startBtn"><svg class="icon"><use href="#i-play"/></svg>Start quiz</button>
+        <span class="hint">Tip: press <kbd>1</kbd>–<kbd>4</kbd> to answer, <kbd>Enter</kbd> for next</span>
+      </div>
+      <p id="bestLine" style="margin:1.25rem 0 0;font-weight:700" hidden></p>
+    </section>
+
+    <!-- QUIZ -->
+    <section class="card screen" id="screenQuiz" aria-labelledby="questionText" hidden>
+      <div class="progress" id="progress" role="progressbar" aria-label="Quiz progress" aria-valuemin="1"></div>
+      <div class="meta"><span id="counter"></span><span id="topic"></span></div>
+      <h2 class="question" id="questionText" tabindex="-1"></h2>
+      <ul class="options" id="options"></ul>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn ghost" id="quitBtn"><svg class="icon"><use href="#i-restart"/></svg>Restart</button>
+        <button class="btn" id="nextBtn" disabled>Next question<svg class="icon"><use href="#i-arrow"/></svg></button>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section class="card screen result" id="screenResult" aria-labelledby="resultTitle" hidden>
+      <div class="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="52"/>
+          <circle class="bar" id="ringBar" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="pct"><span id="pctText">0%</span><small id="pctSub"></small></div>
+      </div>
+      <h2 id="resultTitle"></h2>
+      <p class="sub" id="resultSub"></p>
+      <div class="chips">
+        <span class="chip"><svg class="icon"><use href="#i-check"/></svg><span id="rCorrect"></span> correct</span>
+        <span class="chip"><svg class="icon"><use href="#i-x"/></svg><span id="rWrong"></span> wrong</span>
+        <span class="chip"><svg class="icon"><use href="#i-trophy"/></svg>Best <span id="rBest"></span></span>
+      </div>
+      <div class="row">
+        <button class="btn sun" id="restartBtn"><svg class="icon"><use href="#i-restart"/></svg>Restart quiz</button>
+      </div>
+
+      <details class="review">
+        <summary><svg class="icon"><use href="#i-list"/></svg>Review your answers</summary>
+        <ol id="reviewList"></ol>
+      </details>
+    </section>
+
+    <footer>Built with HTML, CSS &amp; JavaScript BY M.Adeeb Ali Softwer Developer</a></footer>
+  </main>
+
+  <script type="module">
+    // ---------- Question bank ----------
+    const QUESTIONS = [
+      { topic: "HTML", q: "What does HTML stand for?",
+        options: ["Hyper Text Markup Language", "High Text Machine Language", "Hyperlink Text Management Language", "Home Tool Markup Language"], answer: 0,
+        why: "HTML is the standard markup language that describes the structure of a web page." },
+      { topic: "CSS", q: "Which language is used to style web pages?",
+        options: ["HTML", "CSS", "Java", "SQL"], answer: 1,
+        why: "CSS (Cascading Style Sheets) controls colors, layout, spacing and typography." },
+      { topic: "JavaScript", q: "Which language is primarily used to add interactivity to web pages?",
+        options: ["CSS", "HTML", "JavaScript", "XML"], answer: 2,
+        why: "JavaScript runs in the browser and reacts to clicks, input, timers and network data." },
+      { topic: "CSS", q: "Which symbol is used for an ID selector in CSS?",
+        options: [".", "#", "@", "*"], answer: 1,
+        why: "#header targets the element with id=\"header\". A dot (.) targets a class." },
+      { topic: "HTML", q: "Which HTML element holds the main, unique content of a page?",
+        options: ["<section>", "<aside>", "<main>", "<div>"], answer: 2,
+        why: "<main> marks the dominant content and should appear once per page." },
+      { topic: "CSS", q: "Which CSS property creates a flexible one-dimensional layout?",
+        options: ["display: flex", "float: flex", "position: flex", "layout: flex"], answer: 0,
+        why: "display: flex turns a container into a flexbox for rows or columns." },
+      { topic: "JavaScript", q: "How do you declare a variable that cannot be reassigned?",
+        options: ["var", "let", "const", "static"], answer: 2,
+        why: "const prevents reassignment of the binding. Objects stored in it can still be mutated." },
+      { topic: "JavaScript", q: "What does the arrow function (x) => x * 2 return for x = 4?",
+        options: ["6", "8", "16", "undefined"], answer: 1,
+        why: "Arrow functions with a single expression return it implicitly: 4 * 2 = 8." },
+      { topic: "HTML", q: "Which attribute makes an image accessible to screen readers?",
+        options: ["title", "src", "alt", "href"], answer: 2,
+        why: "alt provides a text alternative, shown when the image fails to load and read aloud by assistive tech." },
+      { topic: "JavaScript", q: "Which method selects the first element matching a CSS selector?",
+        options: ["document.querySelector()", "document.getElements()", "document.findFirst()", "document.select()"], answer: 0,
+        why: "querySelector() accepts any CSS selector and returns the first match, or null." },
+    ];
+
+    // ---------- Helpers ----------
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const LETTERS = ["A", "B", "C", "D"];
+    const STORAGE_KEY = "bracketquiz:best";
+
+    const shuffle = (arr) => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
+    const readBest = () => {
+      try { return Number(localStorage.getItem(STORAGE_KEY)) || 0; } catch { return 0; }
+    };
+    const saveBest = (value) => {
+      try { localStorage.setItem(STORAGE_KEY, String(value)); } catch { /* storage unavailable */ }
+    };
+
+    // ---------- Elements ----------
+    const el = {
+      start: $("#screenStart"), quiz: $("#screenQuiz"), result: $("#screenResult"),
+      chips: $("#chips"), scoreChip: $("#scoreChip"), streakChip: $("#streakChip"),
+      progress: $("#progress"), counter: $("#counter"), topic: $("#topic"),
+      question: $("#questionText"), options: $("#options"), feedback: $("#feedback"),
+      next: $("#nextBtn"), quit: $("#quitBtn"), startBtn: $("#startBtn"), restart: $("#restartBtn"),
+      bestLine: $("#bestLine"),
+      ringBar: $("#ringBar"), pctText: $("#pctText"), pctSub: $("#pctSub"),
+      resultTitle: $("#resultTitle"), resultSub: $("#resultSub"),
+      rCorrect: $("#rCorrect"), rWrong: $("#rWrong"), rBest: $("#rBest"), review: $("#reviewList"),
+    };
+
+    // ---------- State ----------
+    const state = { deck: [], index: 0, score: 0, streak: 0, locked: false, history: [] };
+
+    const show = (name) => {
+      for (const key of ["start", "quiz", "result"]) el[key].hidden = key !== name;
+      el.chips.hidden = name !== "quiz";
+    };
+
+    const icon = (id) => `<svg class="icon" aria-hidden="true"><use href="#${id}"/></svg>`;
+
+    // ---------- Flow ----------
+    function startQuiz() {
+      state.deck = shuffle(QUESTIONS).map(({ options, answer, ...rest }) => ({
+        ...rest,
+        options: shuffle(options.map((text, i) => ({ text, correct: i === answer }))),
+      }));
+      Object.assign(state, { index: 0, score: 0, streak: 0, locked: false, history: [] });
+      show("quiz");
+      renderQuestion();
+    }
+
+    function renderProgress() {
+      el.progress.replaceChildren(...state.deck.map((_, i) => {
+        const seg = document.createElement("i");
+        const done = state.history[i];
+        if (done) seg.className = `done ${done.correct ? "ok" : "bad"}`;
+        else if (i === state.index) seg.className = "current";
+        return seg;
+      }));
+      el.progress.ariaValueMax = state.deck.length;
+      el.progress.ariaValueNow = state.index + 1;
+    }
+
+    function renderQuestion() {
+      const item = state.deck[state.index];
+      state.locked = false;
+
+      renderProgress();
+      el.counter.textContent = `Question ${state.index + 1} of ${state.deck.length}`;
+      el.topic.textContent = item.topic;
+      el.question.textContent = item.q;
+      el.scoreChip.textContent = state.score;
+      el.streakChip.textContent = state.streak;
+
+      el.options.replaceChildren(...item.options.map((opt, i) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.type = "button";
+        btn.dataset.index = i;
+        btn.innerHTML = `<span class="key" aria-hidden="true">${LETTERS[i]}</span><span class="label"></span><span class="status"></span>`;
+        btn.querySelector(".label").textContent = opt.text;   // textContent keeps "<main>" etc. safe
+        li.append(btn);
+        return li;
+      }));
+
+      el.feedback.className = "feedback";
+      el.feedback.textContent = "";
+      el.next.disabled = true;
+      el.next.innerHTML = `${state.index === state.deck.length - 1 ? "See result" : "Next question"}${icon("i-arrow")}`;
+      el.question.focus({ preventScroll: true });
+    }
+
+    function selectAnswer(i) {
+      if (state.locked) return;
+      state.locked = true;
+
+      const item = state.deck[state.index];
+      const picked = item.options[i];
+      const correctIndex = item.options.findIndex((o) => o.correct);
+
+      if (picked.correct) { state.score++; state.streak++; } else { state.streak = 0; }
+      state.history[state.index] = { q: item.q, picked: picked.text, answer: item.options[correctIndex].text, correct: picked.correct };
+
+      [...el.options.querySelectorAll(".option")].forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === correctIndex) { btn.classList.add("correct"); btn.querySelector(".status").innerHTML = icon("i-check"); }
+        else if (idx === i) { btn.classList.add("wrong"); btn.querySelector(".status").innerHTML = icon("i-x"); }
+        else btn.classList.add("dim");
+      });
+
+      el.feedback.innerHTML = `<strong>${picked.correct ? "Correct." : "Not quite."}</strong> `;
+      el.feedback.append(document.createTextNode(item.why));
+      el.feedback.classList.add("show");
+
+      el.scoreChip.textContent = state.score;
+      el.streakChip.textContent = state.streak;
+      renderProgress();
+      el.next.disabled = false;
+      el.next.focus({ preventScroll: true });
+    }
+
+    function nextQuestion() {
+      if (!state.locked) return;
+      if (state.index < state.deck.length - 1) {
+        state.index++;
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      const total = state.deck.length;
+      const pct = Math.round((state.score / total) * 100);
+      const best = Math.max(readBest(), state.score);
+      if (best > readBest()) saveBest(best);
+
+      const tiers = [
+        [100, "Flawless run", "Every single answer was right. Ship it."],
+        [80, "Excellent work", "You clearly know your fundamentals."],
+        [60, "Solid score", "Good base. A little more practice and you are there."],
+        [40, "Getting there", "Review the explanations below and try again."],
+        [0, "Fresh start", "Everyone starts somewhere. Read the review and go again."],
+      ];
+      const [, title, sub] = tiers.find(([min]) => pct >= min);
+
+      show("result");
+      el.resultTitle.textContent = title;
+      el.resultSub.textContent = sub;
+      el.pctText.textContent = `${pct}%`;
+      el.pctSub.textContent = `${state.score} / ${total}`;
+      el.rCorrect.textContent = state.score;
+      el.rWrong.textContent = total - state.score;
+      el.rBest.textContent = `${best}/${total}`;
+
+      el.review.replaceChildren(...state.history.map((h) => {
+        const li = document.createElement("li");
+        li.className = h.correct ? "ok" : "bad";
+        const q = document.createElement("b");
+        q.textContent = h.q;
+        const a = document.createElement("span");
+        a.textContent = h.correct ? `Your answer: ${h.answer}` : `Your answer: ${h.picked} · Correct: ${h.answer}`;
+        li.append(q, a);
+        return li;
+      }));
+
+      // Animate the score ring
+      const C = 2 * Math.PI * 52;
+      el.ringBar.style.strokeDashoffset = C;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.ringBar.style.strokeDashoffset = C * (1 - pct / 100);
+      }));
+      el.resultTitle.parentElement.querySelector("details")?.removeAttribute("open");
+    }
+
+    function renderBest() {
+      const best = readBest();
+      el.bestLine.hidden = !best;
+      if (best) el.bestLine.textContent = `Your best score: ${best}/${QUESTIONS.length}`;
+    }
+
+    function goHome() {
+      show("start");
+      renderBest();
+    }
+
+    // ---------- Events ----------
+    el.startBtn.addEventListener("click", startQuiz);
+    el.restart.addEventListener("click", startQuiz);
+    el.quit.addEventListener("click", startQuiz);
+    el.next.addEventListener("click", nextQuestion);
+
+    el.options.addEventListener("click", (e) => {
+      const btn = e.target.closest(".option");
+      if (btn) selectAnswer(Number(btn.dataset.index));
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (el.quiz.hidden) return;
+      const n = Number(e.key);
+      if (n >= 1 && n <= 4) { selectAnswer(n - 1); return; }
+      const letter = LETTERS.indexOf(e.key.toUpperCase());
+      if (e.key.length === 1 && letter > -1) { selectAnswer(letter); return; }
+      if ((e.key === "Enter" || e.key === "ArrowRight") && state.locked && document.activeElement !== el.quit) {
+        e.preventDefault();
+        nextQuestion();
+      }
+    });
+
+    goHome();
+  </script>
+</body>
+</html>
